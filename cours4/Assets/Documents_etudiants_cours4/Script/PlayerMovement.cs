@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour {
-
+    public enum Direction { North, East, South, West };
+    public Direction playerDirection = Direction.South;
+    Animator playerAnimator;
     [SerializeField] public float maxSpeed = 7;
     protected Vector2 targetVelocity;
     protected Rigidbody2D rigidBody2D;
     protected ContactFilter2D contactFilter;
     protected RaycastHit2D[] hitBuffer = new RaycastHit2D[16];
     protected List<RaycastHit2D> hitBufferList = new List<RaycastHit2D>(16);
-
+    
     protected const float minMoveDistance = 0.001f;
     protected const float shellRadius = 0.01f;
     private bool fireIsPress = false;
@@ -20,6 +22,7 @@ public class PlayerMovement : MonoBehaviour {
         contactFilter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
         contactFilter.useLayerMask = true;
         rigidBody2D = GetComponent<Rigidbody2D>();
+        playerAnimator = GetComponent<Animator>();
     }
     void FixedUpdate() {
         Vector2 velocityX = new Vector2(); ;
@@ -35,11 +38,37 @@ public class PlayerMovement : MonoBehaviour {
         ComputeVelocity();
         ManageInteraction();
     }
+
+    private void UpdateDirection(float mouvementX, float mouvementY)
+    {
+
+        if (mouvementY>0)
+        {
+            playerDirection = Direction.North;
+        }else if (mouvementY < 0)
+        {
+            playerDirection = Direction.South;
+        }else if (mouvementX>0)
+        {
+            playerDirection = Direction.East;
+        }
+        else if (mouvementX < 0)
+        {
+            playerDirection = Direction.West;
+        }
+        playerAnimator.SetFloat("Direction", (float)playerDirection);
+    }
+    private void UpdateMouvementSpeed(float speed)
+    {
+        playerAnimator.SetFloat("speed", speed);
+    }
     protected  void ComputeVelocity() {
         Vector2 move = Vector2.zero;
         move.x = Input.GetAxis("Horizontal");
         move.y = Input.GetAxis("Vertical");
+        UpdateDirection(move.x, move.y);
         targetVelocity = move.normalized * maxSpeed;
+        UpdateMouvementSpeed(targetVelocity.magnitude);
     }
     void Movement(Vector2 move, bool yMovement) {
         float distance = move.magnitude;
